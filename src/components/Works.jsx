@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import {
@@ -160,7 +160,7 @@ const projects = [
   },
 ];
 
-const BentoCard = ({
+const ProjectCard = ({
   index,
   slug,
   name,
@@ -173,28 +173,67 @@ const BentoCard = ({
   className,
 }) => {
   const [imageOk, setImageOk] = useState(true);
+  const cardRef = useRef(null);
+
+  const handleMouseMove = (e) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    card.style.setProperty("--x", `${e.clientX - rect.left}px`);
+    card.style.setProperty("--y", `${e.clientY - rect.top}px`);
+  };
 
   return (
     <motion.div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: (index % 3) * 0.15 }}
       viewport={{ once: true }}
       className={clsx(
         className,
-        "group relative flex flex-col overflow-hidden rounded-[20px] bg-black-100 border border-purple-500/20 shadow-lg shadow-purple-900/20 hover:shadow-purple-700/40 transition-all duration-300"
+        "group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-black-100/60 backdrop-blur-sm transition-colors duration-300 hover:border-white/20"
       )}
     >
+      {/* Cursor-tracked spotlight */}
+      <div
+        className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          background:
+            "radial-gradient(320px circle at var(--x, 50%) var(--y, 50%), rgba(128,77,238,0.15), transparent 70%)",
+        }}
+      />
+
+      {/* Faint index number */}
+      <span className="pointer-events-none absolute right-5 top-3 select-none font-black text-7xl leading-none text-white/[0.04]">
+        {String(index + 1).padStart(2, "0")}
+      </span>
+
+      {/* Window chrome */}
+      <div className="relative flex items-center gap-1.5 px-5 pt-5">
+        <span className="h-2.5 w-2.5 rounded-full bg-red-400/40" />
+        <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/40" />
+        <span className="h-2.5 w-2.5 rounded-full bg-green-400/40" />
+        <span className="ml-2 truncate font-mono text-[11px] text-gray-500">
+          ~/projects/{slug}
+        </span>
+      </div>
+
       {/* Graphic */}
-      <div className="relative h-64 sm:h-72 shrink-0 overflow-hidden">
+      <div className="relative mx-5 mt-4 h-40 shrink-0 overflow-hidden rounded-xl border border-white/5 sm:h-48">
+        <div className={clsx("absolute inset-0 bg-gradient-to-br", gradient)} />
         <div
-          className={clsx(
-            "absolute inset-0 bg-gradient-to-br flex items-center justify-center",
-            gradient
-          )}
-        >
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+          }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
           <Icon
-            className="w-20 h-20 text-white/20 group-hover:text-white/30 group-hover:scale-110 transition-all duration-500"
+            className="h-14 w-14 text-white/25 transition-all duration-500 group-hover:scale-110 group-hover:text-white/40"
             strokeWidth={1.25}
           />
         </div>
@@ -204,47 +243,60 @@ const BentoCard = ({
             src={`/projects/${slug}.png`}
             alt={name}
             onError={() => setImageOk(false)}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         )}
-
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex justify-center items-center gap-6">
-          {source_code_link && (
-            <button
-              onClick={() => window.open(source_code_link, "_blank")}
-              className="p-4 rounded-full bg-gradient-to-br from-purple-600 to-cyan-600 hover:scale-110 transition-transform shadow-lg"
-            >
-              <Github className="w-6 h-6 text-white" />
-            </button>
-          )}
-          {live_demo && (
-            <button
-              onClick={() => window.open(live_demo, "_blank")}
-              className="p-4 rounded-full bg-white/10 border-2 border-cyan-400 hover:scale-110 transition-transform shadow-lg"
-            >
-              <ExternalLink className="w-6 h-6 text-cyan-400" />
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Content */}
-      <div className="relative p-6 flex-1">
-        <h3 className="text-white text-xl font-bold mb-2 group-hover:text-cyan-400 transition-colors">
+      <div className="relative flex flex-1 flex-col p-5">
+        <h3 className="text-lg font-bold text-white transition-colors group-hover:text-cyan-400">
           {name}
         </h3>
-        <p className="text-gray-400 text-sm leading-relaxed mb-4 line-clamp-3">
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-400">
           {description}
         </p>
-        <div className="flex flex-wrap gap-2">
+
+        <div className="mt-4 flex flex-wrap gap-1.5">
           {tags.map((tag) => (
             <span
               key={`${name}-${tag.name}`}
-              className={`text-[13px] font-medium ${tag.color}`}
+              className={clsx(
+                "rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium",
+                tag.color
+              )}
             >
-              #{tag.name}
+              {tag.name}
             </span>
           ))}
+        </div>
+
+        <div className="mt-5 flex items-center gap-4 border-t border-white/5 pt-4">
+          {source_code_link && (
+            <a
+              href={source_code_link}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-400 transition-colors hover:text-white"
+            >
+              <Github className="h-4 w-4" /> Code
+            </a>
+          )}
+          {live_demo && (
+            <a
+              href={live_demo}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-400 transition-colors hover:text-cyan-400"
+            >
+              <ExternalLink className="h-4 w-4" /> Live
+            </a>
+          )}
+          {!source_code_link && !live_demo && (
+            <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+              <Lock className="h-3.5 w-3.5" /> Private
+            </span>
+          )}
         </div>
       </div>
     </motion.div>
@@ -290,7 +342,7 @@ const Works = () => (
     {/* Bento Grid */}
     <div className="grid grid-cols-1 gap-6 sm:mt-4 lg:grid-cols-6 max-w-7xl mx-auto relative z-10">
       {projects.map((project, index) => (
-        <BentoCard key={project.slug} index={index} {...project} />
+        <ProjectCard key={project.slug} index={index} {...project} />
       ))}
     </div>
 
