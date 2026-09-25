@@ -171,7 +171,7 @@ const Experience = () => {
               <div>
                 <h4 className="text-white text-[22px] font-bold">Bachelor of Science in Computer Science</h4>
                 <p className="text-cyan-400 text-[18px] font-semibold">Strathmore University</p>
-                <p className="text-purple-400 text-[14px] mt-1">Second Class Upper</p>
+                <p className="text-purple-400 text-[14px] mt-1">First Class Honours</p>
               </div>
               <div className="px-4 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full text-sm text-cyan-300">
                 Expected July 2027
